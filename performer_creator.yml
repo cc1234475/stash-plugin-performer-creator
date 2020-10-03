@@ -1,0 +1,14 @@
+# example plugin config
+name: Performer Creator
+description: Create Performers from scenes
+version: 0.1
+url: https://github.com/com1234475/stash-plugin-performer-creator
+exec:
+ - env/bin/python
+ - "{pluginDir}/performer_creator.py"
+interface: raw
+tasks:
+  - name: Parse all scenes for performers
+    description: Parse all scene names and create performers that are not present.
+    defaultArgs:
+      mode: create
