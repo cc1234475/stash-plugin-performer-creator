@@ -209,6 +209,7 @@ query{
             id
             title
             path
+            url
             performers{
                 name
             }
@@ -220,25 +221,17 @@ query{
 }
 """
         result = self.__callGraphQL(query % offset)
+        all_scenes = [s for s in result["findScenes"]["scenes"] if not s['url']]
         if IGNORE_TAGS:
             scenes = []
-            for scene in result["findScenes"]["scenes"]:
+            for scene in all_scenes:
                 if not any([t in IGNORE_TAGS for t in scene["tags"]]):
                     scenes.append(scene)
         else:
-            scenes = result["findScenes"]["scenes"]
+            scenes = all_scenes
         return scenes
 
     def findPerformer(self, name, scraper="Babepedia"):
-
-        # # Write your query or mutation here
-        # {
-        #   scrapePerformerList(scraper_id: "ThePornDB",query: "Aaliyah Hadid"){
-        #     name
-        #     url
-        #   }
-        # }
-
         query = """
 query{
   scrapePerformer(scraper_id: "%s", scraped_performer: {name: "%s", url: "https://www.babepedia.com/babe/%s"}){
