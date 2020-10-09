@@ -23,5 +23,3 @@ Rescan the plugins, you will find a new button in the `Tasks` sections in the se
 
 - It uses the file names, not the titles.
 - Defaults to using Babepedia
-- It doesn't handle authenticated instances of stash. (remove the login while you scan)
-- Not using pagination, so it might be slow to start on large instances
