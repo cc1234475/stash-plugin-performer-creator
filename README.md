@@ -22,4 +22,3 @@ Rescan the plugins, you will find a new button in the `Tasks` sections in the se
 # Known limitations/Gotcha's
 
 - It uses the file names, not the titles.
-- Defaults to using Babepedia

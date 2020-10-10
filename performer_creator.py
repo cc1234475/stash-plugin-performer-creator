@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import json
-import string
 import random
 
 import requests
@@ -82,26 +81,25 @@ def createPerformers(client):
 
         for scene in scenes:
             path = scene["path"]
-            performers_in_scene = [s["name"] for s in scene["performers"]]
+            performers_in_scene = [s["name"].lower() for s in scene["performers"]]
             file_name = os.path.basename(path)
             file_name, _ = os.path.splitext(file_name)
-            file_name = file_name.replace("-", ",").replace(",", " ,")
-            file_name = " ".join(file_name.split('.')[3:])
+            file_name = file_name.replace("-", ",").replace(",", " , ")
             doc = nlp(file_name)
             performers_names = set()
             for w in doc.ents:
                 if w.label_ == "PERSON":
-                    performers_names.add(w.text.title())
+                    performers_names.add(w.text.strip().title())
 
             if len(file_name.split()) == 2 and not any(
                 char.isdigit() for char in file_name
             ):
-                performers_names.add(file_name.title())
+                performers_names.add(file_name.strip().title())
 
             for p in performers_names:
                 if (
-                    p not in performers_in_scene
-                    and p not in performers
+                    p.lower() not in performers_in_scene
+                    and p.lower() not in performers
                     and len(p.split()) != 1
                 ):
                     performers_to_lookup.add(p)
@@ -115,7 +113,7 @@ def createPerformers(client):
         log.LogProgress(float(i) / float(total))
         try:
             data = client.findPerformer(performer)
-        except:
+        except Exception as e:
             log.LogError(str(e))
             continue
 
@@ -131,7 +129,7 @@ def createPerformers(client):
 
         log.LogInfo("Adding: " + performer)
         try:
-            result = client.createPerformer(data)
+            client.createPerformer(data)
             total_added += 1
         except Exception as e:
             log.LogError(str(e))
@@ -197,9 +195,16 @@ class StashInterface:
             )
 
     def listPerformers(self):
-        query = """query{allPerformersSlim{name}}"""
+        query = """query{allPerformers{name aliases}}"""
         result = self.__callGraphQL(query)
-        return [p["name"] for p in result["allPerformersSlim"]]
+        preformers = set()
+        for p in result["allPerformers"]:
+            preformers.add(p["name"].lower())
+            if p["aliases"] :
+                for alias in p["aliases"] .replace('/', ',').split(','):
+                    preformers.add(alias.strip().lower())
+
+        return preformers
 
     def listScenes(self, offset=0):
         query = """
@@ -231,37 +236,54 @@ query{
             scenes = all_scenes
         return scenes
 
-    def findPerformer(self, name, scraper="Babepedia"):
-        query = """
-query{
-  scrapePerformer(scraper_id: "%s", scraped_performer: {name: "%s", url: "https://www.babepedia.com/babe/%s"}){
-    name
-    gender
-    url
-    twitter
-    instagram
-    birthdate
-    ethnicity
-    country
-    eye_color
-    height
-    measurements
-    fake_tits
-    career_length
-    tattoos
-    piercings
-    aliases
-    image
-  }
-}
-"""
-        url_name = name.replace(" ", "_")
-        query = query % (scraper, name, url_name)
-        result = self.__callGraphQL(query)
-        if not result["scrapePerformer"]["name"]:
-            return
+    def findPerformer(self, name):
+        for scraper in SCRAPE_ORDER:
+            query = """{
+    scrapePerformerList(scraper_id: "%s", query: "%s"){
+        name
+        url
+    }
+    }
+    """
+            query = query % (scraper, name)
+            result = self.__callGraphQL(query)
+            performer_data = None
+            for result in result["scrapePerformerList"]:
+                if result['name'] == name:
+                    performer_data = result
+                    break
+            else:
+                continue
 
-        return result["scrapePerformer"]
+            query = """
+    query{
+    scrapePerformer(scraper_id: "%s", scraped_performer: {url: "%s"}){
+        name
+        gender
+        url
+        twitter
+        instagram
+        birthdate
+        ethnicity
+        country
+        eye_color
+        height
+        measurements
+        fake_tits
+        career_length
+        tattoos
+        piercings
+        aliases
+        image
+    }
+    }
+    """
+            query = query % (scraper, performer_data['url'])
+            result = self.__callGraphQL(query)
+            if not result["scrapePerformer"]["name"]:
+                continue
+
+            return result["scrapePerformer"]
 
     def createPerformer(self, data):
         query = """
