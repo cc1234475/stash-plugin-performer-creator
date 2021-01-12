@@ -125,7 +125,7 @@ def createPerformers(client):
         if "gender" in data:
             data["gender"] = data["gender"].upper()
 
-        data = {k: v for k, v in data.items() if v is not None}
+        data = {k: v for k, v in data.items() if v is not None and v != ""}
 
         log.LogInfo("Adding: " + performer)
         try:
