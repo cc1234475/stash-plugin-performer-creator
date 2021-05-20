@@ -209,7 +209,7 @@ class StashInterface:
     def listScenes(self, offset=0):
         query = """
 query{
-    findScenes(filter: {per_page:1000, page: %d}){
+    findScenes(scene_filter: {organized: false}, filter: {per_page:1000, page: %d}){
           scenes{
             id
             title
