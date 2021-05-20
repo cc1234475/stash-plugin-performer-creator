@@ -1,2 +1,2 @@
-requests
-spacy
+requests==2.25.1
+spacy==2.3.5
