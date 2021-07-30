@@ -122,7 +122,7 @@ def createPerformers(client):
         if not data:
             continue
 
-        if "gender" in data:
+        if data.get('gender'):
             data["gender"] = data["gender"].upper()
 
         data = {k: v for k, v in data.items() if v is not None and v != ""}
